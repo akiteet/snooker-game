@@ -6,11 +6,11 @@
 
 本地游戏页面：
 
-https://akiteet.github.io/snooker-game/game_2d.html
+[点击开始游戏](https://akiteet.github.io/snooker-game/game_2d.html)
 
 规则说明页面：
 
-https://akiteet.github.io/snooker-game/game_2d_rules.html
+[查看规则说明](https://akiteet.github.io/snooker-game/game_2d_rules.html)
 
 > 说明：GitHub Pages 只能托管静态网页，不能运行 WebSocket 服务端。联机版本需要另外运行或部署 `server.js`。
 
@@ -59,13 +59,24 @@ http://localhost:3000/game_2d_online.html
 - 全场所有球停止后才允许下一次击球
 - 独立规则说明页面
 
+## 游戏规则覆盖
+
+游戏根据斯诺克常见规则实现了核心流程：
+
+- 红球未清台前遵循“一红一彩”
+- 红球入袋后必须指定目标彩球
+- 彩球在红球阶段入袋后自动复位
+- 红球清台后按黄、绿、棕、蓝、粉、黑顺序清彩
+- 犯规按最低 4 分、活球分值、犯规涉及球最高分值取最高罚分
+- 犯规后支持让杆、自己击球和空杆还原重打
+- 犯规后满足条件时自动判定自由球
+
 ## 文件说明
 
 ```text
 game_2d.html              本地双人游戏主页面
 game_2d_online.html       WebSocket 联机游戏页面
 game_2d_rules.html        规则说明页面
-game_2d_优化说明.md       开发与优化记录
 server.js                 联机服务器
 package.json              Node.js 启动与依赖配置
 .gitattributes            Git 文本换行配置
@@ -74,5 +85,9 @@ package.json              Node.js 启动与依赖配置
 ## 部署提示
 
 如果想让别人通过公网联机，需要把 `server.js` 部署到支持 Node.js 和 WebSocket 的平台，例如 Render、Railway、Fly.io 或自己的云服务器。部署后，在联机页面的“服务器”输入框填写对应的 `wss://...` 地址。
+
+## 说明
+
+这是一个前端练习项目，主要用于实现 2D 球类碰撞、游戏状态机、斯诺克规则判定和基础联机同步。
 
 如果你觉得这个项目有帮助，欢迎点一个 Star。
