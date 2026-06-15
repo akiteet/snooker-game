@@ -893,7 +893,11 @@
             }
 
             if (message.type === 'state') {
-                applyRemoteState(message.state);
+                if (message.reason === 'shot-update' && message.state && message.state.partial === 'motion') {
+                    applyMotionState(message.state);
+                } else {
+                    applyRemoteState(message.state);
+                }
                 return;
             }
 
@@ -957,8 +961,8 @@
         function maybeBroadcastMovingState() {
             if (!onlineConnected || myPlayer !== shotAuthorityPlayer) return;
             const now = Date.now();
-            if (now - lastStateBroadcastAt < 120) return;
-            broadcastState('shot-update');
+            if (now - lastStateBroadcastAt < 50) return;
+            broadcastMotionState('shot-update');
         }
 
         function broadcastState(reason) {
@@ -968,6 +972,16 @@
                 type: 'state',
                 reason,
                 state: serializeGameState()
+            }));
+        }
+
+        function broadcastMotionState(reason) {
+            if (!onlineConnected || applyingRemoteState || !socket || socket.readyState !== WebSocket.OPEN) return;
+            lastStateBroadcastAt = Date.now();
+            socket.send(JSON.stringify({
+                type: 'state',
+                reason,
+                state: serializeMotionState()
             }));
         }
 
@@ -1008,6 +1022,47 @@
                 shotAuthorityPlayer,
                 message: lastMessage
             };
+        }
+
+        function serializeMotionState() {
+            return {
+                partial: 'motion',
+                balls: balls.map(ball => ({
+                    id: ball.id,
+                    x: ball.x,
+                    y: ball.y,
+                    vx: ball.vx,
+                    vy: ball.vy
+                })),
+                ballMoving,
+                allBallsStopped,
+                shotAuthorityPlayer,
+                message: lastMessage
+            };
+        }
+
+        function applyMotionState(state) {
+            if (!state || !Array.isArray(state.balls)) return;
+            applyingRemoteState = true;
+
+            const incoming = new Map(state.balls.map(ball => [ball.id, ball]));
+            balls = balls.filter(ball => incoming.has(ball.id));
+            for (const ball of balls) {
+                const data = incoming.get(ball.id);
+                ball.x = data.x;
+                ball.y = data.y;
+                ball.vx = data.vx || 0;
+                ball.vy = data.vy || 0;
+            }
+            whiteBall = balls.find(ball => ball.type === 'white') || null;
+            ballMoving = !!state.ballMoving;
+            allBallsStopped = !!state.allBallsStopped;
+            shotAuthorityPlayer = state.shotAuthorityPlayer;
+            if (state.message) {
+                showMessage(state.message);
+            }
+
+            applyingRemoteState = false;
         }
 
         function applyRemoteState(state) {

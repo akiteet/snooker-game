@@ -113,7 +113,9 @@ wss.on('connection', (ws) => {
     if (message.type === 'state') {
       if (!ws.roomId || !rooms.has(ws.roomId)) return;
       const room = rooms.get(ws.roomId);
-      room.lastState = message.state;
+      if (!message.state || message.state.partial !== 'motion') {
+        room.lastState = message.state;
+      }
       broadcast(room, {
         type: 'state',
         reason: message.reason,
