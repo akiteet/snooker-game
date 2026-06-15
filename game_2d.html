@@ -810,6 +810,7 @@
             updatePowerGauge();
             updateDirectionHandle();
             updateUI();
+            syncLetPlayPanel();
             
             const redCount = balls.filter(b => b.type === 'red').length;
             console.log('初始化后红球数量:', redCount);
@@ -1583,18 +1584,20 @@
 
         function showLetPlayPanel(canRestore) {
             awaitingLetPlayDecision = true;
-            document.getElementById('letPlayYes').style.display = 'inline-block';
-            document.getElementById('letPlayNo').style.display = 'inline-block';
-            document.getElementById('letPlayRestore').style.display = canRestore ? 'inline-block' : 'none';
-            document.getElementById('letPlayPanel').style.display = 'block';
+            syncLetPlayPanel(canRestore);
         }
 
         function hideLetPlayPanel() {
             awaitingLetPlayDecision = false;
-            document.getElementById('letPlayYes').style.display = 'none';
-            document.getElementById('letPlayNo').style.display = 'none';
-            document.getElementById('letPlayRestore').style.display = 'none';
-            document.getElementById('letPlayPanel').style.display = 'none';
+            syncLetPlayPanel();
+        }
+
+        function syncLetPlayPanel(canRestore = lastFoulWasMiss && !!shotSnapshot) {
+            const showPanel = awaitingLetPlayDecision;
+            document.getElementById('letPlayYes').style.display = showPanel ? 'inline-block' : 'none';
+            document.getElementById('letPlayNo').style.display = showPanel ? 'inline-block' : 'none';
+            document.getElementById('letPlayRestore').style.display = showPanel && canRestore ? 'inline-block' : 'none';
+            document.getElementById('letPlayPanel').style.display = showPanel ? 'block' : 'none';
         }
 
         function handleFoul(foulTypes, penalty, options = {}) {

@@ -1015,6 +1015,7 @@
                 lastFoulPenalty,
                 nominatedColorId: nominatedColor ? nominatedColor.id : null,
                 lastFoulWasMiss,
+                shotSnapshot,
                 frameStarter,
                 cueAngle,
                 cuePower,
@@ -1092,6 +1093,7 @@
             awaitingLetPlayDecision = !!state.awaitingLetPlayDecision;
             lastFoulPenalty = state.lastFoulPenalty || 0;
             lastFoulWasMiss = !!state.lastFoulWasMiss;
+            shotSnapshot = state.shotSnapshot || null;
             frameStarter = state.frameStarter || 0;
             cueAngle = state.cueAngle || 0;
             cuePower = state.cuePower || 0;
@@ -1104,6 +1106,7 @@
             updateAngleDisplay();
             setGuideMode(guideMode);
             updateUI();
+            syncLetPlayPanel();
             showMessage(state.message || getWaitMessage());
             applyingRemoteState = false;
         }
@@ -1219,6 +1222,7 @@
             updatePowerGauge();
             updateDirectionHandle();
             updateUI();
+            syncLetPlayPanel();
             
             const redCount = balls.filter(b => b.type === 'red').length;
             console.log('初始化后红球数量:', redCount);
@@ -2014,18 +2018,21 @@
 
         function showLetPlayPanel(canRestore) {
             awaitingLetPlayDecision = true;
-            document.getElementById('letPlayYes').style.display = 'inline-block';
-            document.getElementById('letPlayNo').style.display = 'inline-block';
-            document.getElementById('letPlayRestore').style.display = canRestore ? 'inline-block' : 'none';
-            document.getElementById('letPlayPanel').style.display = 'block';
+            syncLetPlayPanel(canRestore);
         }
 
         function hideLetPlayPanel() {
             awaitingLetPlayDecision = false;
-            document.getElementById('letPlayYes').style.display = 'none';
-            document.getElementById('letPlayNo').style.display = 'none';
-            document.getElementById('letPlayRestore').style.display = 'none';
-            document.getElementById('letPlayPanel').style.display = 'none';
+            syncLetPlayPanel();
+        }
+
+        function syncLetPlayPanel(canRestore = lastFoulWasMiss && !!shotSnapshot) {
+            const canDecide = canResolveFoulDecision();
+            const showPanel = awaitingLetPlayDecision && canDecide;
+            document.getElementById('letPlayYes').style.display = showPanel ? 'inline-block' : 'none';
+            document.getElementById('letPlayNo').style.display = showPanel ? 'inline-block' : 'none';
+            document.getElementById('letPlayRestore').style.display = showPanel && canRestore ? 'inline-block' : 'none';
+            document.getElementById('letPlayPanel').style.display = showPanel ? 'block' : 'none';
         }
 
         function handleFoul(foulTypes, penalty, options = {}) {
