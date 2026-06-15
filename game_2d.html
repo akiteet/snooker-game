@@ -1163,6 +1163,8 @@
         }
 
         function updateBalls() {
+            const previousWhitePosition = whiteBall ? { x: whiteBall.x, y: whiteBall.y } : null;
+
             balls.forEach(ball => {
                 ball.vx *= FRICTION;
                 ball.vy *= FRICTION;
@@ -1211,6 +1213,10 @@
                     }
                 }
             });
+
+            if (previousWhitePosition && whiteBall && balls.includes(whiteBall)) {
+                detectFirstBallHitAlongWhitePath(previousWhitePosition.x, previousWhitePosition.y, whiteBall.x, whiteBall.y);
+            }
 
             if (ballMoving) {
                 checkHoles();
@@ -1267,6 +1273,44 @@
                 });
             });
             balls = balls.filter(b => !toRemove.includes(b));
+        }
+
+        function detectFirstBallHitAlongWhitePath(startX, startY, endX, endY) {
+            if (!shotStarted || firstBallHit || !whiteBall) return;
+
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const a = dx * dx + dy * dy;
+            if (a <= 0) return;
+
+            const collisionDistance = BALL_RADIUS * 2;
+            let earliestBall = null;
+            let earliestT = Infinity;
+
+            for (const ball of balls) {
+                if (ball === whiteBall) continue;
+
+                const fx = startX - ball.x;
+                const fy = startY - ball.y;
+                const b = 2 * (fx * dx + fy * dy);
+                const c = fx * fx + fy * fy - collisionDistance * collisionDistance;
+                const discriminant = b * b - 4 * a * c;
+                if (discriminant < 0) continue;
+
+                const sqrtDiscriminant = Math.sqrt(discriminant);
+                const t1 = (-b - sqrtDiscriminant) / (2 * a);
+                const t2 = (-b + sqrtDiscriminant) / (2 * a);
+                const t = t1 >= 0 ? t1 : t2;
+
+                if (t >= 0 && t <= 1 && t < earliestT) {
+                    earliestT = t;
+                    earliestBall = ball;
+                }
+            }
+
+            if (earliestBall) {
+                firstBallHit = earliestBall;
+            }
         }
 
         function ballCollision(b1, b2) {
