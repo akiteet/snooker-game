@@ -1,8 +1,8 @@
-# game_2d - 副本.html 优化说明
+# game_2d.html 优化说明
 
 生成日期：2026-06-09
 
-目标文件：`E:\AAA_study\front_end\exercise\table_tennis\snooker\game_2d - 副本.html`
+目标文件：`E:\AAA_study\front_end\exercise\table_tennis\snooker\game_2d.html`
 
 规则依据：`E:\AAA_study\front_end\exercise\table_tennis\match_rule\snooker_rule.txt`
 
