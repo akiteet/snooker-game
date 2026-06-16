@@ -773,6 +773,9 @@
         let applyingRemoteState = false;
         let shotAuthorityPlayer = null;
         let lastStateBroadcastAt = 0;
+        let remoteMotionTargets = null;
+        const REMOTE_MOTION_SMOOTHING = 0.45;
+        const REMOTE_MOTION_SNAP_DISTANCE = 80;
 
         // 球杆系统变量
         let cueAngle = 0;
@@ -802,6 +805,7 @@
             initGame();
             initControls();
             initOnlineUI();
+            drawDirectionTicks();
 
             canvas.addEventListener('click', handleCanvasClick);
             gameLoop();
@@ -1058,11 +1062,10 @@
             balls = balls.filter(ball => incoming.has(ball.id));
             for (const ball of balls) {
                 const data = incoming.get(ball.id);
-                ball.x = data.x;
-                ball.y = data.y;
                 ball.vx = data.vx || 0;
                 ball.vy = data.vy || 0;
             }
+            remoteMotionTargets = incoming;
             whiteBall = balls.find(ball => ball.type === 'white') || null;
             ballMoving = !!state.ballMoving;
             allBallsStopped = !!state.allBallsStopped;
@@ -1074,9 +1077,40 @@
             applyingRemoteState = false;
         }
 
+        function smoothRemoteMotion() {
+            if (!remoteMotionTargets || shouldSimulateTable()) return;
+
+            let settled = true;
+            for (const ball of balls) {
+                const target = remoteMotionTargets.get(ball.id);
+                if (!target) continue;
+
+                const dx = target.x - ball.x;
+                const dy = target.y - ball.y;
+                const distance = Math.hypot(dx, dy);
+
+                if (distance > REMOTE_MOTION_SNAP_DISTANCE) {
+                    ball.x = target.x;
+                    ball.y = target.y;
+                } else {
+                    ball.x += dx * REMOTE_MOTION_SMOOTHING;
+                    ball.y += dy * REMOTE_MOTION_SMOOTHING;
+                }
+
+                ball.vx = target.vx || 0;
+                ball.vy = target.vy || 0;
+                if (distance > 0.35) settled = false;
+            }
+
+            if (!ballMoving && settled) {
+                remoteMotionTargets = null;
+            }
+        }
+
         function applyRemoteState(state) {
             if (!state) return;
             applyingRemoteState = true;
+            remoteMotionTargets = null;
             nextBallId = state.nextBallId || 1;
             balls = (state.balls || []).map(data => {
                 const ball = createBall(data.x, data.y, data.color, data.type, data.points);
@@ -1543,6 +1577,7 @@
             ballMoving = true;
             allBallsStopped = false;
             shotAuthorityPlayer = currentPlayer;
+            remoteMotionTargets = null;
             shotStarted = true;
             firstBallHit = null;
             pottedThisShot = [];
@@ -2584,7 +2619,8 @@
         }
 
         function drawGuideLines() {
-            if (guideMode === 'off' || isTableInMotion() || !whiteBall || !gameStarted) {
+            if (guideMode === 'off' || isTableInMotion() || !whiteBall || !gameStarted ||
+                (ONLINE_MODE && onlineConnected && !canControlCurrentTurn())) {
                 return;
             }
 
@@ -2812,13 +2848,13 @@
         }
 
         function gameLoop() {
+            smoothRemoteMotion();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawTable();
             drawPlacementHint();
             drawBalls();
             drawCue();
             drawGuideLines();
-            drawDirectionTicks();
 
             if (isTableInMotion() && shouldSimulateTable()) {
                 updateBalls();

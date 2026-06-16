@@ -715,6 +715,7 @@
 
             initGame();
             initControls();
+            drawDirectionTicks();
 
             canvas.addEventListener('click', handleCanvasClick);
             gameLoop();
@@ -2353,7 +2354,6 @@
             drawBalls();
             drawCue();
             drawGuideLines();
-            drawDirectionTicks();
 
             if (isTableInMotion()) {
                 updateBalls();
