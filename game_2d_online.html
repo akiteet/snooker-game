@@ -995,7 +995,7 @@
                 bottom: 5px;
             }
             .direction-control {
-                width: var(--dir-size, min(194px, 24vh));
+                width: min(194px, 24vh);
                 height: auto;
                 aspect-ratio: 1;
                 margin: 4px auto 2px;
@@ -1018,7 +1018,7 @@
                 margin-top: 3px;
             }
             .spin-control {
-                width: var(--spin-size, min(154px, 20vh));
+                width: min(154px, 20vh);
                 height: auto;
                 aspect-ratio: 1;
                 margin: 4px auto 5px;
@@ -1446,75 +1446,26 @@
             canvas.style.height = `${Math.floor(displayWidth / aspectRatio)}px`;
         }
 
-        // 以“球台 + 信息栏”的实际高度为基准，等比例缩放左侧三个仪表盘，
-        // 使方向盘与击球点盘保持原始比例(194:154)并完整呈现在同一页内。
-        function fitGaugesToStage() {
-            const root = document.documentElement;
-            const leftColumn = document.querySelector('.left-column');
-            if (!window.matchMedia('(min-width: 1181px)').matches) {
-                root.style.removeProperty('--dir-size');
-                root.style.removeProperty('--spin-size');
-                if (leftColumn) leftColumn.style.height = '';
-                return;
-            }
-
-            const stage = canvas.closest('.table-stage');
-            const rightColumn = stage ? stage.parentElement : null;
-            const infoPanel = stage ? stage.nextElementSibling : null;
-            const dirPanel = document.querySelector('.left-column > .panel:nth-child(2)');
-            const spinPanel = document.querySelector('.left-column > .panel:nth-child(3)');
-            const dirControl = document.getElementById('directionControl');
-            const spinControl = document.getElementById('spinControl');
-            if (!leftColumn || !rightColumn || !stage || !infoPanel ||
-                !dirPanel || !spinPanel || !dirControl || !spinControl) return;
-
-            // 基准高度 = 球台高度 + 行间距 + 信息栏高度
-            const rightGap = parseFloat(getComputedStyle(rightColumn).rowGap) || 0;
-            const referenceHeight = stage.offsetHeight + infoPanel.offsetHeight + rightGap;
-            if (referenceHeight <= 0) return;
-
-            leftColumn.style.height = `${referenceHeight}px`;
-
-            const leftGap = parseFloat(getComputedStyle(leftColumn).rowGap) || 0;
-            const rowHeight = (referenceHeight - leftGap) / 2;
-
-            // 面板中除控件本体以外的固定高度（标题/标签/按钮/内外边距）——与控件尺寸无关，可稳定测量
-            const dirChrome = dirPanel.offsetHeight - dirControl.offsetHeight;
-            const spinChrome = spinPanel.offsetHeight - spinControl.offsetHeight;
-
-            // 控件可用宽度（右侧子列内容宽度）
-            const panelStyle = getComputedStyle(dirPanel);
-            const maxWidth = dirPanel.clientWidth
-                - parseFloat(panelStyle.paddingLeft)
-                - parseFloat(panelStyle.paddingRight);
-
-            const DIR_BASE = 194;
-            const SPIN_BASE = 154;
-
-            // 取高度与宽度约束中最严格的，保持等比例
-            const scale = Math.max(0.2, Math.min(
-                (rowHeight - dirChrome) / DIR_BASE,
-                (rowHeight - spinChrome) / SPIN_BASE,
-                maxWidth / DIR_BASE
-            ));
-
-            root.style.setProperty('--dir-size', `${Math.floor(DIR_BASE * scale)}px`);
-            root.style.setProperty('--spin-size', `${Math.floor(SPIN_BASE * scale)}px`);
-        }
-
-        function fitLayout() {
-            fitTableToStage();
-            fitGaugesToStage();
-        }
-
         function initResponsiveTable() {
-            const stage = canvas.closest('.table-stage');
-            if ('ResizeObserver' in window && stage) {
-                const resizeObserver = new ResizeObserver(fitLayout);
-                resizeObserver.observe(stage);
+            const appShell = document.querySelector('.app-shell');
+            const infoPanel = canvas.closest('.table-stage')?.nextElementSibling;
+            let pendingFrame = 0;
+            const scheduleFit = () => {
+                if (pendingFrame) return;
+                pendingFrame = requestAnimationFrame(() => {
+                    pendingFrame = 0;
+                    fitTableToStage();
+                });
+            };
+
+            if ('ResizeObserver' in window) {
+                const resizeObserver = new ResizeObserver(scheduleFit);
+                if (appShell) resizeObserver.observe(appShell);
+                if (infoPanel) resizeObserver.observe(infoPanel);
             }
-            window.addEventListener('resize', fitLayout);
-            requestAnimationFrame(fitLayout);
+            window.addEventListener('resize', scheduleFit);
+            if (document.fonts?.ready) document.fonts.ready.then(scheduleFit);
+            scheduleFit();
         }
 
         function initOnlineUI() {
