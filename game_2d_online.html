@@ -699,7 +699,7 @@
             
             <!-- 让杆面板 -->
             <div class="let-play-banner" id="letPlayPanel" style="display:none;">
-                <div class="title">对方犯规，是否让杆？</div>
+                <div class="title" id="letPlayTitle">对方犯规，请选择后续处理</div>
                 <div class="btn-group">
                     <button class="btn-sm active" id="letPlayYes" onclick="letPlay(true)" style="display:none;">让犯规方继续击球</button>
                     <button class="btn-sm" id="letPlayRestore" onclick="letPlayFromOriginal()" style="display:none;">还原重打</button>
@@ -2109,9 +2109,19 @@
         function syncLetPlayPanel(canRestore = lastFoulWasMiss && !!shotSnapshot) {
             const canDecide = canResolveFoulDecision();
             const showPanel = awaitingLetPlayDecision && canDecide;
-            document.getElementById('letPlayYes').style.display = showPanel ? 'inline-block' : 'none';
-            document.getElementById('letPlayNo').style.display = showPanel ? 'inline-block' : 'none';
-            document.getElementById('letPlayRestore').style.display = showPanel && canRestore ? 'inline-block' : 'none';
+            const title = document.getElementById('letPlayTitle');
+            const letPlayYes = document.getElementById('letPlayYes');
+            const letPlayNo = document.getElementById('letPlayNo');
+            const letPlayRestore = document.getElementById('letPlayRestore');
+
+            title.textContent = freeBallMode
+                ? '你已获得自由球，请决定自己击球或让杆'
+                : '未获得自由球，请决定自己击球或让杆';
+            letPlayYes.textContent = freeBallMode ? '让犯规方继续（自由球失效）' : '让犯规方继续击球';
+            letPlayNo.textContent = freeBallMode ? '自己击球（使用自由球）' : '自己击球';
+            letPlayYes.style.display = showPanel ? 'inline-block' : 'none';
+            letPlayNo.style.display = showPanel ? 'inline-block' : 'none';
+            letPlayRestore.style.display = showPanel && canRestore ? 'inline-block' : 'none';
             document.getElementById('letPlayPanel').style.display = showPanel ? 'block' : 'none';
         }
 
@@ -2145,7 +2155,8 @@
 
             showLetPlayPanel(lastFoulWasMiss && !!shotSnapshot);
             updateUI();
-            showMessage(`系统裁判判罚：玩家${currentPlayer + 1}犯规（${foulType}）罚${lastFoulPenalty}分！玩家${otherPlayer + 1}可选择自己击球、让杆或还原重打`);
+            const freeBallNotice = freeBallMode ? '获得自由球' : '未获得自由球';
+            showMessage(`系统裁判判罚：玩家${currentPlayer + 1}犯规（${foulType}）罚${lastFoulPenalty}分！玩家${otherPlayer + 1}${freeBallNotice}，请选择自己击球、让杆或还原重打`);
         }
 
         function uniqueBalls(list) {
