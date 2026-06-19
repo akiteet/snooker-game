@@ -773,6 +773,13 @@
         // 引导线系统变量
         let guideMode = 'short';
         const STOP_SPEED = 0.08;
+        const BASE_SHOT_SPEED = 12;
+        const HIGH_POWER_BOOST = 2;
+
+        function getShotSpeed(powerPercent) {
+            const power = Math.max(0, Math.min(100, powerPercent)) / 100;
+            return power * (BASE_SHOT_SPEED + HIGH_POWER_BOOST * power);
+        }
 
         function setGuideMode(mode) {
             guideMode = mode;
@@ -1535,8 +1542,7 @@
                 return;
             }
 
-            const power = cuePower / 100;
-            const speed = power * 12;
+            const speed = getShotSpeed(cuePower);
 
             shotSnapshot = captureShotSnapshot();
             shotContext = captureShotContext();
@@ -2592,8 +2598,7 @@
                 return;
             }
 
-            const power = cuePower / 100;
-            const speed = Math.max(power * 12, 0.5);
+            const speed = Math.max(getShotSpeed(cuePower), 0.5);
 
             const whiteVx = Math.cos(cueAngle) * speed;
             const whiteVy = Math.sin(cueAngle) * speed;
