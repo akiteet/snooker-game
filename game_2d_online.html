@@ -1349,8 +1349,8 @@
 
         function playCueStrikeSound(powerPercent, syncOnline = true) {
             const strength = Math.max(0.15, Math.min(1, powerPercent / 100));
-            playTone(210, 120, 0.045, 0.055 + strength * 0.09, 'triangle');
-            playTone(1200, 700, 0.018, 0.012 + strength * 0.025, 'square');
+            playTone(420, 190, 0.032, 0.045 + strength * 0.075, 'triangle');
+            playTone(2400, 1250, 0.012, 0.018 + strength * 0.028, 'sine');
             if (syncOnline) broadcastSoundEvent('cue', powerPercent);
         }
 
@@ -1360,7 +1360,8 @@
             if (now - lastBallSoundAt < 12) return;
             lastBallSoundAt = now;
             const strength = Math.min(1, impactSpeed / BASE_SHOT_SPEED);
-            playTone(1050 + strength * 320, 760, 0.028, 0.025 + strength * 0.08, 'sine');
+            playTone(1750 + strength * 520, 980, 0.018, 0.03 + strength * 0.075, 'sine');
+            playTone(3100, 1800, 0.008, 0.008 + strength * 0.018, 'triangle');
             if (syncOnline) broadcastSoundEvent('ball', impactSpeed);
         }
 
@@ -1370,7 +1371,8 @@
             if (now - lastCushionSoundAt < 18) return;
             lastCushionSoundAt = now;
             const strength = Math.min(1, impactSpeed / BASE_SHOT_SPEED);
-            playTone(240, 135, 0.055, 0.018 + strength * 0.055, 'triangle');
+            playTone(520, 245, 0.034, 0.018 + strength * 0.048, 'triangle');
+            playTone(1350, 720, 0.012, 0.008 + strength * 0.016, 'sine');
             if (syncOnline) broadcastSoundEvent('cushion', impactSpeed);
         }
 
@@ -1378,7 +1380,7 @@
             const ballType = typeof ballOrType === 'string' ? ballOrType : ballOrType.type;
             const pitch = ballType === 'white' ? 115 : 145;
             playTone(pitch, 55, 0.16, 0.085, 'sine');
-            playTone(420, 170, 0.07, 0.025, 'triangle');
+            playTone(820, 280, 0.045, 0.032, 'triangle');
             if (syncOnline) broadcastSoundEvent('pocket', 1, ballType);
         }
 
