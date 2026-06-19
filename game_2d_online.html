@@ -2609,46 +2609,28 @@
             ctx.setLineDash([6, 3]);
 
             let closestBall = null;
-            let closestHit = null;
+            let closestCollision = null;
             let minDist = Infinity;
 
             for (const ball of balls) {
                 if (ball.type === 'white') continue;
 
-                const dx = ball.x - whiteBall.x;
-                const dy = ball.y - whiteBall.y;
-                const dot = dx * whiteVx + dy * whiteVy;
-
-                if (dot <= 0) continue;
-
-                const vmag = Math.sqrt(whiteVx * whiteVx + whiteVy * whiteVy);
-                if (vmag < 0.01) continue;
-
-                const projLen = dot / vmag;
-                const projX = whiteBall.x + (whiteVx / vmag) * projLen;
-                const projY = whiteBall.y + (whiteVy / vmag) * projLen;
-
-                const distToBall = Math.sqrt((ball.x - projX) ** 2 + (ball.y - projY) ** 2);
-
-                if (distToBall < BALL_RADIUS * 2 && projLen < minDist) {
-                    const overlap = (BALL_RADIUS * 2 - distToBall) / vmag;
-                    const hitTime = projLen / vmag - overlap;
-                    
-                    if (hitTime > 0) {
-                        minDist = projLen;
-                        closestBall = ball;
-                        closestHit = {
-                            x: whiteBall.x + whiteVx * hitTime,
-                            y: whiteBall.y + whiteVy * hitTime
-                        };
-                    }
+                const collision = predictGuideCollision(
+                    whiteBall.x, whiteBall.y,
+                    whiteVx, whiteVy,
+                    ball.x, ball.y
+                );
+                if (collision && collision.distance < minDist) {
+                    minDist = collision.distance;
+                    closestBall = ball;
+                    closestCollision = collision;
                 }
             }
 
             let endX, endY;
-            if (closestHit) {
-                endX = closestHit.x;
-                endY = closestHit.y;
+            if (closestCollision) {
+                endX = closestCollision.x;
+                endY = closestCollision.y;
             } else {
                 endX = whiteBall.x + whiteVx * (maxLength / speed);
                 endY = whiteBall.y + whiteVy * (maxLength / speed);
@@ -2660,35 +2642,68 @@
             ctx.lineTo(endX, endY);
             ctx.stroke();
 
-            if (closestBall && closestHit) {
-                const nx = (closestBall.x - closestHit.x) / (BALL_RADIUS * 2);
-                const ny = (closestBall.y - closestHit.y) / (BALL_RADIUS * 2);
+            if (closestBall && closestCollision) {
+                const { x: hitX, y: hitY, nx, ny } = closestCollision;
                 const dvn = whiteVx * nx + whiteVy * ny;
 
-                const whiteAfterVx = whiteVx - 2 * dvn * nx;
-                const whiteAfterVy = whiteVy - 2 * dvn * ny;
-                const ballVx = 2 * dvn * nx;
-                const ballVy = 2 * dvn * ny;
+                const whiteAfterVx = whiteVx - dvn * nx;
+                const whiteAfterVy = whiteVy - dvn * ny;
+                const ballVx = dvn * nx;
+                const ballVy = dvn * ny;
+                const previewScale = maxLength / speed * 0.5;
 
                 ctx.strokeStyle = 'rgba(200, 200, 255, 0.7)';
                 ctx.beginPath();
-                ctx.moveTo(closestHit.x, closestHit.y);
-                ctx.lineTo(closestHit.x + whiteAfterVx * (maxLength / speed * 0.5), closestHit.y + whiteAfterVy * (maxLength / speed * 0.5));
+                ctx.moveTo(hitX, hitY);
+                ctx.lineTo(hitX + whiteAfterVx * previewScale, hitY + whiteAfterVy * previewScale);
                 ctx.stroke();
 
                 ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)';
                 ctx.beginPath();
-                ctx.moveTo(closestHit.x, closestHit.y);
-                ctx.lineTo(closestHit.x + ballVx * (maxLength / speed * 0.5), closestHit.y + ballVy * (maxLength / speed * 0.5));
+                ctx.moveTo(closestBall.x, closestBall.y);
+                ctx.lineTo(closestBall.x + ballVx * previewScale, closestBall.y + ballVy * previewScale);
                 ctx.stroke();
 
                 ctx.fillStyle = 'rgba(255, 255, 0, 0.9)';
                 ctx.beginPath();
-                ctx.arc(closestHit.x, closestHit.y, 5, 0, Math.PI * 2);
+                ctx.arc(hitX, hitY, 5, 0, Math.PI * 2);
                 ctx.fill();
             }
 
             ctx.setLineDash([]);
+        }
+
+        function predictGuideCollision(startX, startY, vx, vy, targetX, targetY) {
+            const speed = Math.hypot(vx, vy);
+            if (speed < 0.01) return null;
+
+            const ux = vx / speed;
+            const uy = vy / speed;
+            const relX = targetX - startX;
+            const relY = targetY - startY;
+            const projection = relX * ux + relY * uy;
+            if (projection <= 0) return null;
+
+            const collisionDistance = BALL_RADIUS * 2;
+            const perpendicularSq = relX * relX + relY * relY - projection * projection;
+            const collisionDistanceSq = collisionDistance * collisionDistance;
+            if (perpendicularSq >= collisionDistanceSq) return null;
+
+            const distance = projection - Math.sqrt(collisionDistanceSq - perpendicularSq);
+            if (distance < 0) return null;
+
+            const x = startX + ux * distance;
+            const y = startY + uy * distance;
+            const normalLength = Math.hypot(targetX - x, targetY - y);
+            if (normalLength < 0.001) return null;
+
+            return {
+                distance,
+                x,
+                y,
+                nx: (targetX - x) / normalLength,
+                ny: (targetY - y) / normalLength
+            };
         }
 
         function predictCollision(x1, y1, vx1, vy1, x2, y2, vx2, vy2) {
