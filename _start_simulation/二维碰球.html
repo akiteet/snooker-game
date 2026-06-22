@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>台球小游戏</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #222;
+            color: white;
+            font-family: Arial;
+            margin: 20px;
+        }
+        canvas {
+            border: 3px solid #fff;
+            background: #0a5e0a;
+        }
+        .tips {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h2>台球小游戏</h2>
+    <canvas id="table" width="800" height="450"></canvas>
+    <div class="tips">操作：鼠标拖动白球，松开击球 | 球进洞会消失</div>
+
+    <script>
+        // 获取画布
+        const canvas = document.getElementById('table');
+        const ctx = canvas.getContext('2d');
+
+        // ===================== 游戏参数 =====================
+        const BALL_RADIUS = 15;    // 球半径
+        const WHITE_BALL_X = 200;  // 白球初始X
+        const WHITE_BALL_Y = 225;  // 白球初始Y
+        const FRICTION = 0.98;     // 摩擦力
+        const HOLE_RADIUS = 22;    // 洞口半径
+
+        // 球对象（白球 + 彩色球）
+        let balls = [
+            // 白球 (x, y, vx, vy, 颜色)
+            { x: WHITE_BALL_X, y: WHITE_BALL_Y, vx: 0, vy: 0, color: 'white' },
+            // 彩色球（三角摆放）
+            { x: 600, y: 225, vx: 0, vy: 0, color: '#ff4444' },
+            { x: 570, y: 210, vx: 0, vy: 0, color: '#ffcc00' },
+            { x: 570, y: 240, vx: 0, vy: 0, color: '#4444ff' },
+            { x: 540, y: 195, vx: 0, vy: 0, color: '#ff00ff' },
+            { x: 540, y: 225, vx: 0, vy: 0, color: '#00ffff' },
+            { x: 540, y: 255, vx: 0, vy: 0, color: '#ff8800' },
+        ];
+
+        // 6个洞口位置
+        const holes = [
+            { x: 40, y: 40 }, { x: 400, y: 40 }, { x: 760, y: 40 },
+            { x: 40, y: 410 }, { x: 400, y: 410 }, { x: 760, y: 410 }
+        ];
+
+        // 鼠标控制变量
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let whiteBall = balls[0];
+
+        // ===================== 绘制函数 =====================
+        // 绘制台球桌边框 + 洞口
+        function drawTable() {
+            // 桌台底色已在CSS设置
+            ctx.fillStyle = '#003300';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制洞口
+            holes.forEach(hole => {
+                ctx.beginPath();
+                ctx.arc(hole.x, hole.y, HOLE_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = '#111';
+                ctx.fill();
+            });
+        }
+
+        // 绘制所有球
+        function drawBalls() {
+            balls.forEach(ball => {
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = ball.color;
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.stroke();
+            });
+        }
+
+        // 绘制击球辅助线
+        function drawAimLine() {
+            if (!isDragging) return;
+            ctx.beginPath();
+            ctx.moveTo(whiteBall.x, whiteBall.y);
+            ctx.lineTo(dragStart.x, dragStart.y);
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // ===================== 物理逻辑 =====================
+        // 更新球运动（摩擦力+边界反弹）
+        function updateBalls() {
+            balls.forEach(ball => {
+                // 摩擦力减速
+                ball.vx *= FRICTION;
+                ball.vy *= FRICTION;
+
+                // 位置更新
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+
+                // 边界反弹
+                if (ball.x < BALL_RADIUS) { ball.x = BALL_RADIUS; ball.vx *= -0.8; }
+                if (ball.x > canvas.width - BALL_RADIUS) { ball.x = canvas.width - BALL_RADIUS; ball.vx *= -0.8; }
+                if (ball.y < BALL_RADIUS) { ball.y = BALL_RADIUS; ball.vy *= -0.8; }
+                if (ball.y > canvas.height - BALL_RADIUS) { ball.y = canvas.height - BALL_RADIUS; ball.vy *= -0.8; }
+
+                // 进洞判定
+                holes.forEach(hole => {
+                    const dx = ball.x - hole.x;
+                    const dy = ball.y - hole.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < HOLE_RADIUS - 2) {
+                        // 白球进洞：重置位置
+                        if (ball === whiteBall) {
+                            ball.x = WHITE_BALL_X;
+                            ball.y = WHITE_BALL_Y;
+                            ball.vx = 0;
+                            ball.vy = 0;
+                        } else {
+                            // 彩球进洞：移除
+                            balls = balls.filter(b => b !== ball);
+                        }
+                    }
+                });
+            });
+
+            // 球与球碰撞
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    ballCollision(balls[i], balls[j]);
+                }
+            }
+        }
+
+        // 两球碰撞物理计算
+        function ballCollision(b1, b2) {
+            const dx = b2.x - b1.x;
+            const dy = b2.y - b1.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const minDist = BALL_RADIUS * 2;
+
+            if (dist < minDist) {
+                // 碰撞角度
+                const angle = Math.atan2(dy, dx);
+                const sin = Math.sin(angle);
+                const cos = Math.cos(angle);
+
+                // 速度分解
+                const vx1 = b1.vx * cos + b1.vy * sin;
+                const vy1 = b1.vy * cos - b1.vx * sin;
+                const vx2 = b2.vx * cos + b2.vy * sin;
+                const vy2 = b2.vy * cos - b2.vx * sin;
+
+                // 弹性碰撞速度交换
+                const finalVx1 = vx2;
+                const finalVx2 = vx1;
+
+                // 转换回原坐标系
+                b1.vx = finalVx1 * cos - vy1 * sin;
+                b1.vy = vy1 * cos + finalVx1 * sin;
+                b2.vx = finalVx2 * cos - vy2 * sin;
+                b2.vy = vy2 * cos + finalVx2 * sin;
+
+                // 防止重叠
+                const overlap = minDist - dist;
+                b1.x -= overlap * cos;
+                b1.y -= overlap * sin;
+                b2.x += overlap * cos;
+                b2.y += overlap * sin;
+            }
+        }
+
+        // ===================== 鼠标事件 =====================
+        canvas.addEventListener('mousedown', e => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            // 判断是否点击白球
+            const dx = mx - whiteBall.x;
+            const dy = my - whiteBall.y;
+            if (Math.sqrt(dx * dx + dy * dy) < BALL_RADIUS) {
+                isDragging = true;
+                dragStart.x = mx;
+                dragStart.y = my;
+            }
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            dragStart.x = e.clientX - rect.left;
+            dragStart.y = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+            // 计算击球力度和方向
+            const powerX = (whiteBall.x - dragStart.x) * 0.15;
+            const powerY = (whiteBall.y - dragStart.y) * 0.15;
+            whiteBall.vx = powerX;
+            whiteBall.vy = powerY;
+            isDragging = false;
+        });
+
+        // 鼠标离开画布也松开
+        canvas.addEventListener('mouseleave', () => isDragging = false);
+
+        // ===================== 游戏主循环 =====================
+        function gameLoop() {
+            drawTable();
+            drawAimLine();
+            updateBalls();
+            drawBalls();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 启动游戏
+        gameLoop();
+    </script>
+</body>
+</html>

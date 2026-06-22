@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九球规则说明</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #101010;
+            --panel: rgba(255, 255, 255, 0.045);
+            --panel-strong: rgba(52, 34, 19, 0.72);
+            --line: rgba(255, 255, 255, 0.1);
+            --text: #f2eee5;
+            --muted: #b7aa99;
+            --accent: #d4a574;
+            --green: #0f5f3a;
+            --red: #a83232;
+            --yellow: #d6b743;
+            --blue: #3d72d9;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, rgba(15, 95, 58, 0.28), transparent 34%), linear-gradient(135deg, #1a1a1a, #0d0d0d);
+            color: var(--text);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.65;
+        }
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 22px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(12, 12, 12, 0.92);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+        .nav-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e6d2ad;
+        }
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 0 14px;
+            border-radius: 6px;
+            border: 1px solid rgba(212, 165, 116, 0.42);
+            color: #e8d8bc;
+            text-decoration: none;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .nav-link.active,
+        .nav-link:hover {
+            background: rgba(212, 165, 116, 0.18);
+            border-color: rgba(212, 165, 116, 0.78);
+            color: #fff;
+        }
+        main {
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 44px;
+        }
+        .page-title {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 18px;
+            align-items: end;
+            padding: 22px 0 18px;
+            border-bottom: 1px solid var(--line);
+        }
+        h1, h2, h3, p { margin-top: 0; }
+        h1 {
+            font-size: 32px;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            letter-spacing: 0;
+        }
+        .lead {
+            color: var(--muted);
+            margin-bottom: 0;
+            max-width: 720px;
+        }
+        .source {
+            color: #c7b89f;
+            font-size: 13px;
+        }
+        .section {
+            margin-top: 32px;
+        }
+        h2 {
+            font-size: 24px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 10px;
+            margin-bottom: 18px;
+        }
+        h3 {
+            font-size: 18px;
+            color: #e0d0b0;
+            margin-bottom: 10px;
+        }
+        p {
+            margin-bottom: 14px;
+        }
+        ul {
+            margin: 0 0 18px 0;
+            padding-left: 24px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .card h4 {
+            margin: 0 0 10px;
+            color: var(--accent);
+            font-size: 16px;
+        }
+        .card ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .card li {
+            font-size: 14px;
+        }
+        .ball-colors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .ball-color {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+        .ball-color .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        .ball-color .color-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .ball-color .color-number {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .rule-highlight {
+            background: rgba(255, 255, 0, 0.1);
+            border-left: 4px solid #ff0;
+            padding: 12px 16px;
+            margin: 16px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .rule-highlight strong {
+            color: #ff0;
+        }
+        .foul-list {
+            background: rgba(255, 0, 0, 0.05);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .foul-list h4 {
+            color: #ff6b6b;
+            margin: 0 0 10px;
+        }
+        .foul-list ul {
+            margin: 0;
+        }
+        @media (max-width: 768px) {
+            .page-title {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            h1 {
+                font-size: 26px;
+            }
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav" aria-label="页面导航">
+        <div class="nav-title">九球台球 - 规则说明</div>
+        <div class="nav-links">
+            <a class="nav-link" href="game_2d.html">本地游戏</a>
+            <a class="nav-link" href="game_2d_online.html">联机游戏</a>
+            <a class="nav-link active" href="game_2d_rules.html">规则说明</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="page-title">
+            <div>
+                <h1>九球规则说明</h1>
+                <p class="lead">九球因其节奏快、进攻性强、翻盘率高而深受玩家喜爱。本页面介绍九球的基本规则和游戏中的实现方式。</p>
+            </div>
+            <div class="source">规则参考：美式九球标准比赛规则</div>
+        </div>
+
+        <div class="section">
+            <h2>一、基础概述</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>使用球具</h4>
+                    <ul>
+                        <li>共使用10颗球</li>
+                        <li>1颗<strong>白色主球（母球）</strong></li>
+                        <li>1到9号的<strong>目标球</strong></li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>核心宗旨</h4>
+                    <ul>
+                        <li>母球撞击的第一颗目标球，必须是台面上<strong>分值最小</strong>的那颗球</li>
+                        <li>即：必须先打台面上号码最小的球</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>获胜条件</h4>
+                    <ul>
+                        <li>在满足核心宗旨的前提下</li>
+                        <li>将<strong>9号球</strong>合法打入袋中</li>
+                        <li>即赢得该局</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>二、球的颜色与号码</h2>
+            <div class="ball-colors">
+                <div class="ball-color">
+                    <div class="color-dot" style="background: #FFD700;"></div>
+                    <div>
+                        <div class="color-name">1号球</div>
+                        <div class="color-number">黄色</div>
+                    </div>
+                </div>
+                <div class="ball-color">
+                    <div class="color-dot" style="background: #0000FF;"></div>
+                    <div>
+                        <div class="color-name">2号球</div>
+                        <div class="color-number">蓝色</div>
+                    </div>
+                </div>
+                <div class="ball-color">
+                    <div class="color-dot" style="background: #FF0000;"></div>
+                    <div>
+                        <div class="color-name">3号球</div>
+                        <div class="color-number">红色</div>
+                    </div>
+                </div>
+                <div class="ball-color">
+                    <div class="color-dot" style="background: #800080;"></div>
+                    <div>
+                        <div class="color-name">4号球</div>
+                        <div class="color-number">紫色</div>
+                    </div>
+                </div>
+                <div class="ball-color">
+                    <div class="color-dot" style="background: #FFA500;"></div>
+                    <div>
+                        <div class="color-name">5号球</div>
+                        <div class="color-number">橙色</div>
+                    </div>
+                </div>
+                <div class="ball-color">
+                    <div class="color-dot" style="background: #008000;"></div>
+                    <div>
+                        <div class="color-name">6号球</div>
+                        <div class="color-number">绿色</div>
+                    </div>
+                </div>
+                <div class="ball-color">
+                    <div class="color-dot" style="background: #800000;"></div>
+                    <div>
+                        <div class="color-name">7号球</div>
+                        <div class="color-number">棕色</div>
+                    </div>
+                </div>
+                <div class="ball-color">
+                    <div class="color-dot" style="background: #000000;"></div>
+                    <div>
+                        <div class="color-name">8号球</div>
+                        <div class="color-number">黑色</div>
+                    </div>
+                </div>
+                <div class="ball-color">
+                    <div class="color-dot" style="background: #FFCC00;"></div>
+                    <div>
+                        <div class="color-name">9号球</div>
+                        <div class="color-number">金色（关键球）</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>三、摆球与开球规则</h2>
+            
+            <h3>1. 摆球（Rack）</h3>
+            <ul>
+                <li>目标球排列成<strong>菱形</strong>（钻石形）</li>
+                <li><strong>1号球</strong>必须排在最前端，置于"脚点"（置球点）上</li>
+                <li><strong>9号球</strong>必须排在菱形的正中心</li>
+                <li>其他2号至8号球的位置没有固定顺序，随机摆放</li>
+            </ul>
+
+            <h3>2. 开球（Break）</h3>
+            <ul>
+                <li>开球方必须将母球置于开球线后（自由击球区）</li>
+                <li>开球时，母球必须<strong>首先触击1号球</strong></li>
+                <li><strong>合法开球条件</strong>：至少有1颗目标球入袋，<strong>或者</strong>至少有4颗目标球触及库边</li>
+                <li>若未达到此标准，属于非法开球，对手可选择：
+                    <ul>
+                        <li>直接接手台面击球</li>
+                        <li>重新摆球，由自己或让原开球方重新开球</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="rule-highlight">
+                <strong>开球进9号（金九）：</strong>如果在合法的开球中直接将9号球撞入袋中，开球方直接赢得该局。
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>四、推进规则（Push-Out）</h2>
+            <p><strong>推进（又称让球、推球）</strong>仅限在<strong>开球后的第一杆</strong>使用。</p>
+            <ul>
+                <li>如果开球后，母球停留的位置非常刁钻，无法直接击打到1号球，当前击球手可以宣布"Push-Out"（必须在击球前口头声明）</li>
+                <li><strong>推球的特权</strong>：这一杆击球<strong>不受</strong>"必须先碰最小号球"和"球必须碰库"的规则限制</li>
+                <li><strong>推球后的选择</strong>：
+                    <ul>
+                        <li>如果推球时有任何球入袋（除9号球外），这些球不拿出来，且不算得分</li>
+                        <li>如果9号球入袋，需拿回置球点</li>
+                        <li>推球完毕后，<strong>对手有权决定</strong>：是自己接手击球，还是把击球权推回给刚刚推球的人</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>五、击球与续杆规则</h2>
+            
+            <h3>合法击球</h3>
+            <p>母球击中台面上最小号的球后，必须满足以下条件之一，才算合法击球：</p>
+            <ul>
+                <li>有目标球入袋</li>
+                <li>母球或任何一颗目标球触及库边（岸边）</li>
+            </ul>
+
+            <h3>续杆（继续击球）</h3>
+            <ul>
+                <li>只要击球手完成了一次合法击球且有目标球入袋，即可继续击球</li>
+                <li>直到未进球或犯规</li>
+            </ul>
+
+            <h3>间接进球（传球/组合球）</h3>
+            <ul>
+                <li>击球手可以用母球先撞击台面最小号的球</li>
+                <li>再通过该球去撞击其他大号球（包括9号球）入袋</li>
+                <li>只要先碰到了最小号球，进球即有效</li>
+                <li>如果间接将9号球打进，直接赢得该局</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>六、犯规（Fouls）</h2>
+            <p>一旦一方犯规，其击球权结束。<strong>对手获得"全场任意球"（Ball-in-Hand）</strong>，即对手可以将母球放在台面上任何位置开始击球。</p>
+            
+            <div class="foul-list">
+                <h4>常见的犯规行为包括：</h4>
+                <ul>
+                    <li><strong>错球犯规</strong>：母球触击的第一颗球不是台面上最小号的球</li>
+                    <li><strong>未触库犯规</strong>：母球触击目标球后，没有任何一颗球（包括母球和目标球）入袋或碰撞库边</li>
+                    <li><strong>母球洗袋</strong>：母球落入袋中或飞出台面</li>
+                    <li><strong>球飞出台</strong>：任何目标球被击出台面。被击出台面的目标球（除9号球外）直接算作死球，不放回台面</li>
+                    <li><strong>非法触球</strong>：身体、衣服或球杆的任何部位触碰到台面上的任何球（除杆头合法击打母球外）</li>
+                    <li><strong>双击/连击</strong>：球杆杆头与母球发生二次接触，或球杆推球</li>
+                    <li><strong>击球时双脚离地</strong>：击球瞬间，击球手必须至少有一只脚的脚尖或脚掌接触地面</li>
+                </ul>
+            </div>
+
+            <div class="rule-highlight">
+                <strong>特殊规则：连续三次犯规（三犯输局）</strong><br>
+                如果一名球员在连续的三个击球回合中，每一次都发生犯规（中间没有过合法击球），则该局直接判负。裁判或对手必须在球员第二犯后、第三杆击球前给予口头警告，否则三犯不成立。
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>七、胜负判定与死球处理</h2>
+            
+            <h3>9号球的处理</h3>
+            <ul>
+                <li>如果9号球因<strong>犯规</strong>或者<strong>推球（Push-Out）</strong>入袋，或被击出台面，9号球必须被<strong>拿回台面</strong>，放置在"脚点"（置球点）上</li>
+                <li>如果9号球是在<strong>合法击球</strong>中入袋（无论是直接进、传球进、还是开球进），击球方直接获得本局胜利</li>
+            </ul>
+
+            <h3>故意犯规</h3>
+            <ul>
+                <li>球员可以利用"全场任意球"的代价，故意做防守</li>
+                <li>只要是用杆头合法击打母球，即使明知会犯规（例如直接把母球踢走），也只算普通犯规，不取消比赛资格</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>八、游戏中的实现</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>物理引擎</h4>
+                    <ul>
+                        <li>2D碰撞检测</li>
+                        <li>摩擦力模拟</li>
+                        <li>库边反弹</li>
+                        <li>球袋检测</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>规则系统</h4>
+                    <ul>
+                        <li>最小号球优先判定</li>
+                        <li>犯规自动检测</li>
+                        <li>自由球判定</li>
+                        <li>连续犯规计数</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>用户界面</h4>
+                    <ul>
+                        <li>力度控制</li>
+                        <li>方向控制</li>
+                        <li>击球点控制（高杆/低杆/左塞/右塞）</li>
+                        <li>引导线辅助</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>游戏功能</h4>
+                    <ul>
+                        <li>双人本地对战</li>
+                        <li>精彩回放</li>
+                        <li>音效反馈</li>
+                        <li>犯规后续处理</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>九、游戏提示</h2>
+            <ul>
+                <li><strong>开局放置白球</strong>：游戏开始时，玩家需要在左半台面点击放置白球</li>
+                <li><strong>瞄准目标</strong>：使用方向控制或点击台面来调整击球方向</li>
+                <li><strong>控制力度</strong>：使用力度滑块或键盘上下键调整击球力度</li>
+                <li><strong>调整击球点</strong>：使用击球点控制来添加高杆、低杆、左塞或右塞效果</li>
+                <li><strong>观察引导线</strong>：引导线会显示预测的击球路径和碰撞效果</li>
+                <li><strong>注意最小号球</strong>：必须先击打台面上号码最小的球，否则将被判犯规</li>
+                <li><strong>目标是9号球</strong>：最终目的是将9号球打入袋中获胜</li>
+            </ul>
+        </div>
+    </main>
+</body>
+</html>
